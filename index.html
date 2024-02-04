@@ -1,0 +1,257 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do list Web App</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa; /* Light gray background color */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        h1 {
+            text-align: center;
+            font-family: 'Arial', sans-serif;
+            font-weight: 700;
+            color: #ff6347; /* Tomato red color */
+            margin-top: 20px;
+        }
+
+        .container-fluid {
+            padding: 35px;
+        }
+
+        .container {
+            background-color: rgb(247, 236, 236);/*#c8e1f9; /* White background for the container */
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Soft box shadow */
+            padding: 20px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .form-control {
+            background-color: #fbf4f2; /* Light coral background color for the input field */
+            color: #495057;
+        }
+
+        .btn-info {
+            background-color: #17a2b8; /* Aqua blue color for the Add Task button */
+            border: none;
+        }
+
+        .btn-info:hover {
+            background-color: #138496; /* Darker shade on hover */
+        }
+
+        .table {
+            background-color: #ffffff; /* White background for tables */
+        }
+
+        .modal-content {
+            background-color: #ffffff; /* White background for modals */
+        }
+
+        .modal-body {
+            color: #495057;
+        }
+
+        .alert-success {
+            background-color: #28a745; /* Success alert color */
+            color: #ffffff;
+        }
+    </style>
+
+</head>
+
+<body>
+    
+    <div class="container-fluid">
+        <div class="container">
+
+            <div class="mx-auto mt-5" style="max-width: 700px;"> <h1>To Do Web Application </h1>
+                <div class="input-group mb-3">
+                    
+                    <input type="text" class="form-control" placeholder="Enter Your Task" aria-label="Recipient's username"
+                        id="username" aria-describedby="button-addon2" style="background-color: rgb(251, 197, 178);">
+                    <button class="btn text-white btn-info" type="button" id="addUser">Add Task's</button>
+                </div>
+                <div class="display">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Your Task</th>
+                                <th scope="col">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="records">
+
+                        </tbody>
+                    </table>
+                </div>
+                <div class="completed-tasks mt-4">
+                    <h5 >Completed Tasks</h5>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Your Task</th>
+                            </tr>
+                        </thead>
+                        <tbody id="completedTasks">
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="modal fade" id="taskCompleteModal" tabindex="-1" aria-labelledby="taskCompleteModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="taskCompleteModalLabel">Task Completed</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Congratulations! You have completed this task.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const addUserBtn = document.getElementById('addUser');
+        const btnText = addUserBtn.innerText;
+        const usernameTextField = document.getElementById('username');
+        const recordsDisplay = document.getElementById('records');
+        const completedTasksDisplay = document.getElementById('completedTasks');
+        let userArray = [];
+        let completedTasks = [];
+        let edit_id = null;
+
+        let objStr = localStorage.getItem('users');
+
+        if (objStr != null) {
+            userArray = JSON.parse(objStr);
+        }
+
+        DisplayInfo();
+
+        addUserBtn.onclick = () => {
+            const name = usernameTextField.value;
+            if (edit_id != null) {
+                userArray.splice(edit_id, 1, {
+                    'name': name
+                });
+                edit_id = null;
+            } else {
+                userArray.push({
+                    'name': name
+                });
+            }
+
+            SaveInfo(userArray);
+            usernameTextField.value = '';
+            addUserBtn.innerText = btnText;
+
+            // Show success message for task added
+            showMessage("Task added successfully!");
+        }
+
+        function SaveInfo(userArray) {
+            let str = JSON.stringify(userArray);
+            localStorage.setItem('users', str);
+            DisplayInfo();
+        }
+
+        function DisplayInfo() {
+            let statement = '';
+            userArray.forEach((user, i) => {
+                statement += `<tr>
+                    <th scope="row">${i + 1}</th>
+                    <td>${user.name}</td>
+                    <td>
+                        <i class="btn text-white fa fa-edit btn-info mx-2" onclick='EditInfo(${i})'></i>
+                        <i class="btn btn-danger text-white fa fa-trash" onclick='DeleteInfo(${i})'></i>
+                        <button class="btn btn-success mx-2" onclick='CompleteTask(${i})'
+                            data-bs-toggle="modal" data-bs-target="#taskCompleteModal">Complete</button>
+                    </td>
+                </tr>`;
+            });
+            recordsDisplay.innerHTML = statement;
+        }
+
+        function EditInfo(id) {
+            edit_id = id;
+            usernameTextField.value = userArray[id].name;
+            addUserBtn.innerText = 'Save Changes';
+        }
+
+        function DeleteInfo(id) {
+            userArray.splice(id, 1);
+            SaveInfo(userArray);
+        }
+
+        function CompleteTask(id) {
+            completedTasks.push(userArray[id]);
+            userArray.splice(id, 1);
+            SaveInfo(userArray);
+            DisplayCompletedTasks();
+
+            // Show success message for task completed
+            showMessage("Task completed successfully!");
+        }
+
+        function DisplayCompletedTasks() {
+            let completedStatement = '';
+            completedTasks.forEach((task, i) => {
+                completedStatement += `<tr>
+                    <th scope="row">${i + 1}</th>
+                    <td>${task.name}</td>
+                </tr>`;
+            });
+            completedTasksDisplay.innerHTML = completedStatement;
+        }
+
+        function showMessage(message) {
+            // Display a success message for 4 seconds at the top of the page
+            const alertDiv = document.createElement("div");
+            alertDiv.classList.add("alert", "alert-success", "mt-5", "position-fixed", "top-0", "start-50",
+                "translate-middle-x");
+            alertDiv.innerHTML = message;
+            document.body.appendChild(alertDiv);
+
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 4000);
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-b0sjYwpBz4J6K3PKiIU/JrVqUqzLJUc8e9or1jafA9/uK8GMfmvGCIa9tDSTr7X4"
+        crossorigin="anonymous"></script>
+</body>
+
+</html>
